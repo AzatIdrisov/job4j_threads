@@ -11,7 +11,7 @@ public class UserCache {
     private final AtomicInteger id = new AtomicInteger();
 
     public void add(User user) {
-        users.put(id.incrementAndGet(), user);
+        users.put(id.incrementAndGet(), User.of(user.getName()));
     }
 
     public User findById(int id) {
