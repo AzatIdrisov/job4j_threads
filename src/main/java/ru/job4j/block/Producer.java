@@ -13,13 +13,8 @@ public class Producer<T> implements Runnable {
 
     public void run() {
         for (T t : list) {
-            System.out.println("Producer try insert data to queue " + t);
-            try {
-                queue.offer(t);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                Thread.currentThread().interrupt();
-            }
+            System.out.println("Producer try to input data " + t);
+            queue.offer(t);
         }
     }
 }

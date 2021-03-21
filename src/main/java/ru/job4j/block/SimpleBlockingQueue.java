@@ -17,9 +17,13 @@ public class SimpleBlockingQueue<T> {
         this.size = size;
     }
 
-    public synchronized void offer(T value) throws InterruptedException {
+    public synchronized void offer(T value) {
         while (queue.size() >= this.size) {
-            monitor.wait();
+            try {
+                monitor.wait();
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+            }
         }
         queue.add(value);
         monitor.notifyAll();
