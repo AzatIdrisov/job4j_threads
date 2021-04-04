@@ -9,34 +9,41 @@ public class ParallelIndexSearch extends RecursiveTask<Integer> {
 
     private final int[] array;
     private final int element;
-    private final int beginIndex;
+    private final int from;
+    private final int to;
 
-    public ParallelIndexSearch(int[] array, int element, int beginIndex) {
+    public ParallelIndexSearch(int[] array, int element) {
         this.array = array;
         this.element = element;
-        this.beginIndex = beginIndex;
+        this.from = 0;
+        this.to = array.length - 1;
+    }
+
+    public ParallelIndexSearch(int[] array, int element, int from, int to) {
+        this.array = array;
+        this.element = element;
+        this.from = from;
+        this.to = to;
     }
 
     @Override
     protected Integer compute() {
         int result;
-        if (array.length <= MAXSIZE) {
-            result = IndexSearch.searchIndex(array, element);
-            return result != -1 ? result + beginIndex : -1;
+        if (from - to <= MAXSIZE) {
+            result = IndexSearch.searchIndex(array, element, from, to);
+            return result;
         } else {
             int mid = array.length / 2;
-            int[] left = new int[mid];
-            int[] right = new int[mid];
-            System.arraycopy(array, 0, left, 0, left.length);
-            System.arraycopy(array, left.length, right, 0, right.length);
             ParallelIndexSearch leftSide = new ParallelIndexSearch(
-                    left,
+                    this.array,
                     this.element,
-                    beginIndex);
+                    from,
+                    mid);
             ParallelIndexSearch rightSide = new ParallelIndexSearch(
-                    right,
+                    this.array,
                     this.element,
-                    beginIndex + mid);
+                    mid + 1,
+                    to);
             leftSide.fork();
             rightSide.fork();
             int leftResult = leftSide.join();
@@ -44,16 +51,13 @@ public class ParallelIndexSearch extends RecursiveTask<Integer> {
             if (leftResult != -1) {
                 return leftResult;
             }
-            if (rightResult != -1) {
-                return rightResult;
-            }
-            return -1;
+            return rightResult;
         }
     }
 
-    public static int indexSearch(int[] array, int element, int beginIndex) {
+    public static int indexSearch(int[] array, int element) {
         ForkJoinPool forkJoinPool = new ForkJoinPool();
-        return forkJoinPool.invoke(new ParallelIndexSearch(array, element, beginIndex));
+        return forkJoinPool.invoke(new ParallelIndexSearch(array, element));
     }
 
     public static void main(String[] args) {
@@ -61,7 +65,7 @@ public class ParallelIndexSearch extends RecursiveTask<Integer> {
         for (int i = 0; i < 1000; i++) {
             source[i] = i;
         }
-        System.out.println(ParallelIndexSearch.indexSearch(source, 750, 0));
+        System.out.println(ParallelIndexSearch.indexSearch(source, 750));
     }
 
 }
