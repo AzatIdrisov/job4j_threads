@@ -4,42 +4,41 @@ package ru.job4j.multithreads;
  * Implement sequentially work of threads
  *
  * @author Azat Idrisov
- * @version 1
+ * @version 2
  */
 
 public class MasterSlaveBarrier {
-
-    private volatile boolean flag = false;
+    private boolean flag = false;
 
     public synchronized void tryMaster() {
-        doneMaster();
-        System.out.println("Thread A");
-        this.notify();
-        try {
-            this.wait();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        while (flag) {
+            try {
+                wait();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+        System.out.println("Thread A");
     }
 
     public synchronized void trySlave() {
-        if (flag) {
-            System.out.println("Thread B");
-            doneSlave();
-            this.notify();
+        while (!flag) {
+            try {
+                wait();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-        try {
-            this.wait();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        System.out.println("Thread B");
     }
 
-    public void doneMaster() {
+    public synchronized void doneMaster() {
         flag = true;
+        notify();
     }
 
-    public void doneSlave() {
+    public synchronized void doneSlave() {
         flag = false;
+        notify();
     }
 }

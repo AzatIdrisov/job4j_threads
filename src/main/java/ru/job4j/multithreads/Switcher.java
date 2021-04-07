@@ -12,6 +12,7 @@ public class Switcher {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+                        masterSlaveBarrier.doneMaster();
                     }
                 }
         );
@@ -24,6 +25,7 @@ public class Switcher {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+                        masterSlaveBarrier.doneSlave();
                     }
                 }
         );
