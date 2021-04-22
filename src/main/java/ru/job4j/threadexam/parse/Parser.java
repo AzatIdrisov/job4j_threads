@@ -3,6 +3,7 @@ package ru.job4j.threadexam.parse;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import ru.job4j.threadexam.Store;
 import ru.job4j.threadexam.model.Camera;
 import ru.job4j.threadexam.model.CameraSource;
 import ru.job4j.threadexam.model.VideoSource;
@@ -13,6 +14,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class Parser {
@@ -57,7 +59,7 @@ public class Parser {
         String content = getContent(link);
         content = "{\"arr\":" + content + "}";
         JSONObject obj = (JSONObject) JSONValue.parse(content);
-        JSONArray array =  (JSONArray) obj.get("arr");
+        JSONArray array = (JSONArray) obj.get("arr");
         array.forEach(json -> result.add(convertJsonToCameraSource(json)));
         return result;
     }
@@ -72,5 +74,38 @@ public class Parser {
                 token.getValue(),
                 token.getTtl()
         );
+    }
+
+    public static Store parse(String link) throws ExecutionException, InterruptedException {
+        Store store = new Store();
+        Parser parser = new Parser();
+        List<CameraSource> cameraSources = parser.parseCameraSources(link);
+        List<FutureTask> tasks = new ArrayList<>();
+        ExecutorService pool = Executors.newCachedThreadPool();
+        for (CameraSource source : cameraSources) {
+            FutureTask task = new FutureTask<>(() -> parser.convertRootToCamera(source));
+            tasks.add(task);
+            pool.submit(task);
+        }
+        while (true) {
+            if (areTasksDone(tasks)) {
+                pool.shutdown();
+                for (FutureTask task : tasks) {
+                    store.add(task.get().toString());
+                }
+                return store;
+            }
+        }
+    }
+
+    private static boolean areTasksDone(List<FutureTask> tasks) {
+        boolean isDone = true;
+        for (FutureTask task : tasks) {
+            if (!task.isDone()) {
+                isDone = false;
+                break;
+            }
+        }
+        return isDone;
     }
 }
